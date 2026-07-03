@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Design Patterns — Modern C# &amp; Wolverine Reference</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #F0F2F5;
+      --surface:   #FFFFFF;
+      --surf-hov:  #F7F8FA;
+      --border:    #D8DCE8;
+      --border-s:  #B8BECC;
+      --txt:       #0F1117;
+      --txt-sec:   #4A5568;
+      --txt-mute:  #718096;
+      --accent:    #E8901A;
+      --hdr-bg:    #0F1117;
+      --hdr-txt:   #E8E9F0;
+      --hdr-sub:   #6B7280;
+      --mono:      'Cascadia Code','JetBrains Mono','Fira Code','SF Mono','Consolas',monospace;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--txt);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    /* ── Header ────────────────────────────────── */
+    .hdr        { background: var(--hdr-bg); padding: 2rem 2rem 0; }
+    .hdr-in     { max-width: 900px; margin: 0 auto; }
+    .hdr-eye    { font-family: var(--mono); font-size: 11px; letter-spacing: .12em;
+                  color: var(--accent); text-transform: uppercase; margin-bottom: .4rem; }
+    .hdr-title  { font-size: 26px; font-weight: 700; color: var(--hdr-txt);
+                  letter-spacing: -.025em; line-height: 1.2; }
+    .hdr-title em { color: var(--accent); font-style: normal; }
+    .hdr-sub    { font-family: var(--mono); font-size: 12.5px; color: var(--hdr-sub); margin-top: .4rem; }
+    .hdr-stats  { display: flex; gap: 2rem; margin-top: 1.5rem; padding-top: 1.25rem;
+                  border-top: 1px solid rgba(255,255,255,.07); }
+    .stat       { display: flex; flex-direction: column; gap: 2px; }
+    .stat-n     { font-family: var(--mono); font-size: 22px; font-weight: 700; color: var(--accent); }
+    .stat-l     { font-size: 11px; color: var(--hdr-sub); text-transform: uppercase; letter-spacing: .07em; }
+
+    /* ── Tabs ──────────────────────────────────── */
+    .tabs       { background: var(--hdr-bg); border-top: 1px solid rgba(255,255,255,.06);
+                  position: sticky; top: 0; z-index: 10; }
+    .tabs-in    { max-width: 900px; margin: 0 auto; display: flex; }
+    .tab        { font-size: 13px; font-weight: 500; padding: .75rem 1.125rem;
+                  background: none; border: none; border-bottom: 2px solid transparent;
+                  color: var(--hdr-sub); cursor: pointer; white-space: nowrap;
+                  transition: color .15s, border-color .15s; }
+    .tab:hover  { color: var(--hdr-txt); }
+    .tab.on     { color: var(--accent); border-bottom-color: var(--accent); }
+    .tc         { font-family: var(--mono); font-size: 10px; background: rgba(255,255,255,.08);
+                  color: var(--hdr-sub); padding: 1px 5px; border-radius: 99px; margin-left: 5px; }
+
+    /* ── Main ──────────────────────────────────── */
+    .main       { max-width: 900px; margin: 0 auto; padding: 1.5rem 2rem 3rem; }
+
+    .sec-desc   { font-size: 13px; color: var(--txt-mute); margin-bottom: 1.25rem; line-height: 1.65;
+                  padding: .75rem 1rem; background: var(--surface);
+                  border: 1px solid var(--border); border-radius: 8px;
+                  border-left: 3px solid var(--accent); }
+
+    /* ── Filters ───────────────────────────────── */
+    .frow       { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: .75rem; align-items: center; }
+    .flabel     { font-size: 11px; color: #9CA3AF; text-transform: uppercase; letter-spacing: .07em; }
+    .fdiv       { width: 1px; height: 18px; background: var(--border); margin: 0 2px; }
+    .chip       { font-size: 12px; padding: 3px 10px; border-radius: 999px;
+                  border: 1px solid var(--border); background: transparent; color: var(--txt-sec);
+                  cursor: pointer; transition: all .12s; font-family: inherit; }
+    .chip:hover:not(.on) { background: var(--surface); border-color: var(--border-s); }
+    .chip.on    { background: var(--txt); border-color: var(--txt); color: white; }
+
+    .rcount     { font-family: var(--mono); font-size: 11px; color: #9CA3AF; margin-bottom: .625rem; }
+
+    /* ── Pattern list ──────────────────────────── */
+    .plist      { display: flex; flex-direction: column; gap: 1px;
+                  border: 1px solid var(--border); border-radius: 10px;
+                  overflow: hidden; background: var(--border); }
+    .pcard      { background: var(--surface); padding: 11px 15px;
+                  display: grid; grid-template-columns: 1fr auto; gap: 3px 14px;
+                  align-items: start; transition: background .1s; }
+    .pcard:hover { background: var(--surf-hov); }
+    .ctop       { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+    .pname      { font-family: var(--mono); font-size: 13.5px; font-weight: 600; color: var(--txt); }
+    .catbadge   { font-size: 10px; padding: 2px 7px; border-radius: 999px;
+                  font-weight: 600; color: white; white-space: nowrap; }
+    .impl       { font-size: 12.5px; color: var(--txt-sec); margin-top: 2px; }
+    .impl code  { font-family: var(--mono); font-size: 11px; color: #4338CA;
+                  background: #EEF2FF; padding: 1px 5px; border-radius: 4px; }
+    .impl code.wv { color: #92400E; background: #FEF3E2; }
+    .pnote      { font-size: 12px; color: var(--txt-mute); margin-top: 3px; line-height: 1.55; }
+
+    .sbadge     { font-size: 10.5px; padding: 2px 8px; border-radius: 999px; font-weight: 600;
+                  white-space: nowrap; font-family: var(--mono); }
+    .empty      { background: var(--surface); padding: 2.5rem; text-align: center;
+                  font-size: 14px; color: #9CA3AF; }
+
+    /* ── Legend ────────────────────────────────── */
+    .legend     { display: flex; flex-wrap: wrap; gap: 12px 20px; margin-top: 1.25rem;
+                  padding: .75rem 1rem; background: var(--surface);
+                  border: 1px solid var(--border); border-radius: 8px; }
+    .li         { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--txt-mute); }
+
+    /* ── Footer ────────────────────────────────── */
+    .foot       { text-align: center; font-size: 11px; color: #9CA3AF;
+                  font-family: var(--mono); padding: 1.25rem 2rem 2rem;
+                  border-top: 1px solid var(--border); margin-top: 1rem; }
+
+    @media (max-width: 640px) {
+      .hdr  { padding: 1.5rem 1rem 0; }
+      .main { padding: 1rem 1rem 2rem; }
+      .hdr-stats { gap: 1.25rem; }
+      .tab  { font-size: 12px; padding: .625rem .75rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-in">
+    <div class="hdr-eye">// design-pattern-reference</div>
+    <h1 class="hdr-title">Design Patterns in Modern <em>C#</em> &amp; Wolverine</h1>
+    <p class="hdr-sub">retire · retain · what Wolverine absorbs</p>
+    <div class="hdr-stats">
+      <div class="stat"><span class="stat-n">18</span><span class="stat-l">Obsolete</span></div>
+      <div class="stat"><span class="stat-n">21</span><span class="stat-l">Essential</span></div>
+      <div class="stat"><span class="stat-n">14</span><span class="stat-l">Wolverine</span></div>
+    </div>
+  </div>
+</header>
+
+<nav class="tabs">
+  <div class="tabs-in">
+    <button class="tab on" id="tab-obsolete"  onclick="setTab('obsolete')">No Longer Needed<span class="tc">18</span></button>
+    <button class="tab"    id="tab-essential" onclick="setTab('essential')">Still Essential<span class="tc">21</span></button>
+    <button class="tab"    id="tab-wolverine" onclick="setTab('wolverine')">Wolverine Absorbs<span class="tc">14</span></button>
+  </div>
+</nav>
+
+<main class="main" id="app"></main>
+
+<footer class="foot">C# 12 · .NET 8 · Wolverine 2.x · Marten 7.x</footer>
+
+<script>
+// ── Colour maps ───────────────────────────────────────────────────
+const CAT_CLR = {
+  Behavioral:'#4F46E5', Creational:'#059669', Structural:'#D97706',
+  GoF:'#4F46E5', Domain:'#059669', Resilience:'#DC2626',
+  Distributed:'#7C3AED', Concurrency:'#0891B2',
+  Scheduling:'#E8901A', Messaging:'#4F46E5', Persistence:'#059669',
+};
+const ST = {
+  Absorbed:     { bg:'#ECFDF5', cl:'#065F46' },
+  Framework:    { bg:'#EFF6FF', cl:'#1E40AF' },
+  Diminished:   { bg:'#FFFBEB', cl:'#92400E' },
+  Evergreen:    { bg:'#F5F3FF', cl:'#4C1D95' },
+  Architectural:{ bg:'#EEF2FF', cl:'#3730A3' },
+  Operational:  { bg:'#FFF1F2', cl:'#9F1239' },
+  Eliminated:   { bg:'#F0FDF4', cl:'#166534' },
+};
+const ST_DESC = {
+  Absorbed:     'Replaced by a language feature',
+  Framework:    'Handled by the runtime or framework',
+  Diminished:   'Still valid in narrow cases',
+  Evergreen:    'Fundamental structural necessity',
+  Architectural:'Required for modern app design',
+  Operational:  'Required for production reliability',
+  Eliminated:   "Problem eliminated by Wolverine's processing model",
+};
+const DESCS = {
+  obsolete:  'Language features, managed runtimes, and DI frameworks have absorbed these patterns. Writing them in modern C# means compensating for constraints that no longer exist.',
+  essential: 'These patterns solve structural, domain, or operational problems that no language feature can address. They remain as valid as ever — and in distributed, event-sourced systems, more so.',
+  wolverine: "Patterns that appear in many codebases as manual plumbing, but are absorbed by Wolverine's design model. Finding these in a Wolverine project usually signals code written before the team fully understood the framework — or generated by an AI assistant trained on too much pre-Wolverine C#.",
+};
+
+// ── Data ──────────────────────────────────────────────────────────
+const OBSOLETE = [
+  { name:'Strategy', cat:'Behavioral', status:'Absorbed',
+    impl:'Func&lt;T,R&gt; / Action&lt;T&gt; delegates',
+    note:'Passing behavior as a value eliminates the interface and implementing-class ceremony entirely. In modern C# this is a one-liner.' },
+  { name:'Command', cat:'Behavioral', status:'Absorbed',
+    impl:'Func / Action delegates; record types',
+    note:'The basic "pass an action" use case is just a delegate. Undo/redo stacks can occasionally still justify a dedicated type, but not the full pattern.' },
+  { name:'Template Method', cat:'Behavioral', status:'Absorbed',
+    impl:'Higher-order functions with Func&lt;T&gt; parameters',
+    note:'The "override a step in an algorithm" motivation becomes a parameter rather than a subclass. No inheritance required.' },
+  { name:'Visitor', cat:'Behavioral', status:'Absorbed',
+    impl:'switch expressions on sealed record hierarchies',
+    note:'Sealed record hierarchies + exhaustive switch replaces double-dispatch machinery. The compiler enforces completeness and flags missing cases at build time.' },
+  { name:'Iterator', cat:'Behavioral', status:'Absorbed',
+    impl:'IEnumerable&lt;T&gt;, yield return, LINQ',
+    note:'Traversal abstraction is entirely native. yield return makes custom lazy sequences trivial with no iterator class needed.' },
+  { name:'Observer', cat:'Behavioral', status:'Absorbed',
+    impl:'event, IObservable&lt;T&gt;, IAsyncEnumerable&lt;T&gt;',
+    note:'C# events for simple pub/sub; Rx for complex stream composition; async streams for push over time. The pattern is now language syntax.' },
+  { name:'Null Object', cat:'Behavioral', status:'Absorbed',
+    impl:'Nullable reference types, ?. operator, ??',
+    note:'#nullable enable moves presence/absence tracking into the type system where the compiler reasons about it. A do-nothing implementation just trades one indirection for another.' },
+  { name:'Specification (ad-hoc)', cat:'Behavioral', status:'Absorbed',
+    impl:'LINQ, Expression&lt;Func&lt;T,bool&gt;&gt;',
+    note:'Composable predicates are first-class via LINQ. Expression trees lift them into SQL. Named business-rule specifications still belong in the Essential list.' },
+  { name:'Memento', cat:'Behavioral', status:'Absorbed',
+    impl:'record + with-expression',
+    note:'Immutable records make snapshot/restore trivial — save the reference, produce the mutation with with, restore by reassigning the saved reference.' },
+  { name:'State', cat:'Behavioral', status:'Absorbed',
+    impl:'Pattern matching on sealed record hierarchies',
+    note:'A sealed union of record types + exhaustive switch replaces the State interface, context class, and all concrete state classes. The compiler enforces legality of transitions.' },
+  { name:'Chain of Responsibility', cat:'Behavioral', status:'Framework',
+    impl:'ASP.NET Core middleware pipeline',
+    note:'RequestDelegate chains are the framework-native expression of this pattern. Rolling your own in a web application is reinventing app.Use() with extra steps.' },
+  { name:'Builder', cat:'Creational', status:'Absorbed',
+    impl:'Named params, object initializers, required members, with',
+    note:'The sole motivation — named optional construction with validation — is now native. required init properties enforce completeness at compile time without a builder class.' },
+  { name:'Singleton', cat:'Creational', status:'Framework',
+    impl:'DI container (.AddSingleton&lt;T&gt;())',
+    note:'Static singleton state globally couples everything and makes testing painful. The DI container manages lifetime with none of the coupling.' },
+  { name:'Prototype', cat:'Creational', status:'Absorbed',
+    impl:'record with with-expression',
+    note:'Records give value-semantic shallow copy with non-destructive mutation by design. Clone() is the antipattern the pattern was trying to work around.' },
+  { name:'Abstract Factory', cat:'Creational', status:'Framework',
+    impl:'.NET runtime + keyed DI services (.AddKeyedSingleton)',
+    note:'Platform portability is handled below the language level. Variant object families are covered by keyed services. The cross-platform motivation that drove most real Abstract Factory use is gone.' },
+  { name:'Factory Method', cat:'Creational', status:'Diminished',
+    impl:'Func&lt;T&gt; in DI, static factory methods',
+    note:'Still valid for construction logic with real domain complexity. The subclass-to-vary-instantiation motivation — which drove most GoF examples — is gone.' },
+  { name:'Decorator', cat:'Structural', status:'Diminished',
+    impl:'Extension methods, default interface members, middleware',
+    note:'Still the right tool to wrap an interface with cross-cutting behavior (caching, logging). Extension methods and middleware cover most of the simpler cases that inflated its apparent necessity.' },
+  { name:'Adapter', cat:'Structural', status:'Diminished',
+    impl:'Extension methods, implicit conversions, source generators',
+    note:'Still needed at genuine system boundaries (third-party APIs, legacy code). Extension methods cover read-only adaptation cleanly without a full wrapper class.' },
+];
+
+const ESSENTIAL = [
+  { name:'Facade', cat:'GoF', status:'Evergreen',
+    impl:'Stable public API over a complex or volatile subsystem',
+    note:"Language features don't reduce the complexity of what's behind the facade — they just make the facade easier to write. The primary tool for wrapping third-party SDKs, generated clients, and legacy systems." },
+  { name:'Proxy', cat:'GoF', status:'Evergreen',
+    impl:'DispatchProxy, Castle DynamicProxy, YARP reverse proxy',
+    note:'Lazy loading, access control, and cross-cutting concerns that cannot be expressed as middleware still need an object-level proxy. Source generators have made compile-time proxies practical without Castle.' },
+  { name:'Composite', cat:'GoF', status:'Evergreen',
+    impl:'IComponent : IEnumerable&lt;IComponent&gt;',
+    note:'Tree-structured domains — UI component trees, expression trees, permission hierarchies, file systems — require this. No language feature replaces the need to treat leaves and branches uniformly.' },
+  { name:'Mediator', cat:'GoF', status:'Architectural',
+    impl:'MediatR, Wolverine IMessageBus in-process dispatch',
+    note:'Decouples request dispatch from handler registration without a shared interface between caller and callee. Essential in Vertical Slice Architecture where cross-slice coupling is the primary structural enemy.' },
+  { name:'Interpreter', cat:'GoF', status:'Architectural',
+    impl:'Expression&lt;Func&lt;T,bool&gt;&gt;, ANTLR, Sprache',
+    note:'Rule engines, query builders, and DSLs require a grammar and an evaluator. Expression trees in C# are the native form — Marten uses them to compile LINQ into SQL at runtime.' },
+  { name:'Flyweight', cat:'GoF', status:'Evergreen',
+    impl:'string interning, FrozenDictionary, compiled Regex cache',
+    note:'High-volume objects with shared immutable state (compiled regular expressions, canonical string values, icon atlases) still need explicit sharing. The pattern is now idiomatic as frozen collections and cached compiled artifacts.' },
+  { name:'Aggregate', cat:'Domain', status:'Architectural',
+    impl:'Sealed class, private setters, raises domain events on change',
+    note:'The consistency boundary is a domain design decision — it cannot be encoded in a framework. Everything inside an aggregate is transactional; everything outside is eventually consistent. No ORM removes this reasoning.' },
+  { name:'Value Object', cat:'Domain', status:'Evergreen',
+    impl:'record Money(decimal Amount, string Currency)',
+    note:'Concepts defined entirely by their attributes — money, coordinates, date ranges, email addresses — need identity-free semantics and structural equality. Records make the implementation trivial; the design concept remains vital.' },
+  { name:'Domain Event', cat:'Domain', status:'Architectural',
+    impl:'Sealed record raised on aggregate, dispatched post-commit',
+    note:'Modelling state transitions as first-class named events (OrderPlaced, PaymentFailed) decouples what happened from everything that should react to it. Foundational for event sourcing with Marten.' },
+  { name:'Repository (domain)', cat:'Domain', status:'Architectural',
+    impl:'IOrderRepository — aggregate roots only, no IQueryable leakage',
+    note:'The seam between domain model and persistence is a design boundary, not a framework concern. A thin repository over Marten keeps persistence details out of the domain and makes aggregate invariants testable in isolation.' },
+  { name:'Specification (named)', cat:'Domain', status:'Architectural',
+    impl:'ISpecification&lt;T&gt; — named, composable, testable predicates',
+    note:'Named specifications (EligibleForDiscount, OverdueForReview) must be referenced, composed, tested, and explained in domain terms. The naming is the point. LINQ handles everything that is not a named business rule.' },
+  { name:'Domain Service', cat:'Domain', status:'Architectural',
+    impl:'Stateless class injected with repositories or domain policies',
+    note:'Operations that span multiple aggregates or require external data to enforce an invariant belong here — not on any single aggregate root, and not leaked into application or infrastructure services.' },
+  { name:'Circuit Breaker', cat:'Resilience', status:'Operational',
+    impl:'Polly ResiliencePipeline + CircuitBreakerStrategy',
+    note:'A failing downstream without a circuit breaker will exhaust thread pools and propagate failure upstream. Open-circuit fast-fail is a fundamental operational pattern. .NET 8 resilience pipelines make it first-class.' },
+  { name:'Retry with Backoff', cat:'Resilience', status:'Operational',
+    impl:'Polly RetryStrategy — exponential backoff + jitter',
+    note:'Transient faults in cloud infrastructure (throttling, brief unavailability) require retry semantics. Jitter prevents thundering-herd on retry storms. HttpClientFactory integrates Polly policies directly.' },
+  { name:'Bulkhead', cat:'Resilience', status:'Operational',
+    impl:'SemaphoreSlim, Polly ConcurrencyLimiter, isolated pools',
+    note:'Isolates resource pools so one failing integration cannot starve all other operations. An unconstrained dependency can exhaust the default thread pool under load. Bulkheads bound the blast radius.' },
+  { name:'Timeout', cat:'Resilience', status:'Operational',
+    impl:'CancellationTokenSource, Polly TimeoutStrategy',
+    note:'Async operations without bounded latency accumulate indefinitely under load. CancellationToken propagation is idiomatic C#; Polly adds timeout as a composable pipeline stage that cooperates with Circuit Breaker.' },
+  { name:'Outbox', cat:'Distributed', status:'Operational',
+    impl:'Persist message in same DB transaction as state; relay async',
+    note:'The dual-write problem: you cannot atomically update a database and publish to a message broker. The outbox writes both to the same transaction. Wolverine + Marten implement this natively — the concept remains essential.' },
+  { name:'Saga', cat:'Distributed', status:'Operational',
+    impl:'Wolverine Saga, MassTransit Saga, NServiceBus Saga',
+    note:'Distributed workflows requiring rollback or compensation across service boundaries need explicit saga coordination. Two-phase commit is unavailable at service boundaries; sagas are the only viable model.' },
+  { name:'CQRS', cat:'Distributed', status:'Architectural',
+    impl:'Separate command / query handlers; divergent read models',
+    note:'Read and write models have different optimization pressures — normalized vs denormalized, consistent vs eventual, single-aggregate vs joined projections. Forcing them into one model limits both. Most valuable with event sourcing.' },
+  { name:'Producer / Consumer', cat:'Concurrency', status:'Evergreen',
+    impl:'System.Threading.Channels.Channel&lt;T&gt;',
+    note:'Decoupling work production from processing rate is a fundamental concurrency primitive. Bounded channels provide backpressure; unbounded channels buffer spikes. Channel&lt;T&gt; is the idiomatic modern form.' },
+  { name:'Pipeline (processing stages)', cat:'Concurrency', status:'Architectural',
+    impl:'Linked Channel&lt;T&gt; stages, TPL Dataflow, System.IO.Pipelines',
+    note:'Multi-stage processing where each stage can parallelize independently (parse → validate → enrich → persist) benefits from bounded pipelines with explicit per-stage concurrency. System.IO.Pipelines for I/O; TPL Dataflow for compute.' },
+];
+
+const WOLVERINE = [
+  { name:'BackgroundWorker (as scheduler)', cat:'Scheduling', status:'Absorbed', wv:true,
+    impl:'ctx.SchedulePublishAsync / cascading delayed messages',
+    note:'BackgroundWorker (WinForms, 2005) used as a server-side scheduler imports a UI concurrency primitive into the wrong context with none of the durability, error handling, or observability you want. Scheduling intent expressed as a handler return value is durable, survives process restart, and appears in Wolverine\'s message log.' },
+  { name:'IHostedService poll loop', cat:'Scheduling', status:'Absorbed', wv:true,
+    impl:'Handler that returns a SchedulePublishAsync — reschedules itself',
+    note:'A handler that re-schedules itself on each completion is declarative and durable. An IHostedService timer loop is fire-and-forget, invisible to Wolverine\'s diagnostic tooling, and loses its state on process restart.' },
+  { name:'MediatR / custom in-process mediator', cat:'Messaging', status:'Absorbed', wv:true,
+    impl:'IMessageBus.InvokeAsync / PublishAsync',
+    note:'Wolverine is a superset of MediatR\'s in-process dispatch — with Marten-backed durability, composable middleware, and zero-ceremony handler discovery. No IRequestHandler&lt;T,R&gt; interface implementation required.' },
+  { name:'Manual command dispatch boilerplate', cat:'Messaging', status:'Absorbed', wv:true,
+    impl:'Convention-based discovery — Handle(MyCommand cmd) is sufficient',
+    note:'Wolverine discovers handlers by naming convention, not by registration or interface. A static or instance Handle / HandleAsync method with the message type as parameter is everything Wolverine needs.' },
+  { name:'Custom handler pipeline / behaviors', cat:'Messaging', status:'Absorbed', wv:true,
+    impl:'IMessageMiddleware / policy conventions / [Middleware] attribute',
+    note:'Cross-cutting concerns (validation, logging, transactions, auth) attach to the handler pipeline via conventions configured at startup. Source generation produces the final handler chain at compile time with zero runtime reflection.' },
+  { name:'Manual Outbox implementation', cat:'Persistence', status:'Absorbed', wv:true,
+    impl:'AutoApplyTransactions + Marten IDocumentSession (default behavior)',
+    note:'Messages sent inside a Wolverine handler are automatically enrolled in the ambient Marten transaction. Outbox semantics are the default, not an opt-in pattern requiring manual relay infrastructure.' },
+  { name:'Manual transaction coordination', cat:'Persistence', status:'Absorbed', wv:true,
+    impl:'AutoApplyTransactions / [Transactional] attribute',
+    note:'Wolverine detects Marten document session usage and wraps the handler in a transaction automatically. The unit of work is the handler boundary — no manual try / commit / rollback blocks, no SaveChanges calls scattered through business logic.' },
+  { name:'lock / Interlocked / SemaphoreSlim', cat:'Concurrency', status:'Eliminated', wv:true,
+    impl:'Sequential local queues — MaximumParallelMessages(1)',
+    note:'Route messages for the same resource to a local queue constrained to one-at-a-time. The race condition is eliminated architecturally before the handler runs, rather than guarded at runtime with a primitive that degrades under load.' },
+  { name:'Distributed lock (Redis, advisory lock)', cat:'Concurrency', status:'Eliminated', wv:true,
+    impl:'IVersioned optimistic concurrency on Marten documents',
+    note:'IVersioned gives optimistic concurrency detection for free on any Marten document. For harder exclusivity needs, local queue partitioning avoids the cliff-shaped failure profile of distributed lock servers under contention.' },
+  { name:'Manual retry logic in handlers', cat:'Resilience', status:'Absorbed', wv:true,
+    impl:'[RetryNow] / [ScheduledRetry] / handler-level retry configuration',
+    note:'Wolverine retry policies compose with the durable inbox — a failed message can be retried across process restarts, not just within the current process lifetime. Manual Polly wired inside a handler gives no such durability guarantee.' },
+  { name:'Manual dead letter handling', cat:'Resilience', status:'Absorbed', wv:true,
+    impl:'Built-in dead letter queues — automatic on retry exhaustion',
+    note:'Messages that exhaust retry policies are automatically moved to a dead letter queue. Reprocessing, inspection, and replay are built-in operations accessible via the Wolverine management API — not manual compensating logic.' },
+  { name:'Manual saga / process manager', cat:'Distributed', status:'Absorbed', wv:true,
+    impl:'Wolverine Saga — StartOrContinueWith / CompleteUsing / Persist',
+    note:'Stateful workflows that span multiple messages are first-class citizens. Saga state is persisted automatically between message arrivals without manual save/load cycles. The create-or-resume problem is handled by StartOrContinueWith.' },
+  { name:'IHostedService for background message processing', cat:'Messaging', status:'Absorbed', wv:true,
+    impl:'Wolverine durable message processing runtime (built-in hosted service)',
+    note:'Wolverine is itself the hosted service — with durable inbox/outbox, transport listener management, graceful shutdown, and structured observability. Adding a competing IHostedService usually duplicates a subset of what Wolverine already provides.' },
+  { name:'Timer-based polling (recurring work)', cat:'Scheduling', status:'Absorbed', wv:true,
+    impl:'Scheduled cascading messages — handler publishes its own next execution',
+    note:'A self-rescheduling handler moves the scheduling intent inside the domain, where it is testable, version-controlled, and visible in message history. A timer firing external to the message pipeline is invisible to Wolverine\'s failure handling and retry policies.' },
+];
+
+// ── State ─────────────────────────────────────────────────────────
+let tab = 'obsolete';
+const catF = { obsolete:'All', essential:'All', wolverine:'All' };
+const stF  = { obsolete:'All', essential:'All', wolverine:'All' };
+
+const DATA = { obsolete: OBSOLETE, essential: ESSENTIAL, wolverine: WOLVERINE };
+
+// ── Helpers ───────────────────────────────────────────────────────
+const sstyle = s => {
+  const t = ST[s] || { bg:'#F3F4F6', cl:'#374151' };
+  return `background:${t.bg};color:${t.cl}`;
+};
+
+const uniq = (arr, key) => ['All', ...[...new Set(arr.map(p => p[key]))]];
+
+// ── Render ────────────────────────────────────────────────────────
+function renderFilters(data, which) {
+  const cs = uniq(data, 'cat');
+  const ss = uniq(data, 'status');
+  const chip = (label, active, fn) =>
+    `<button class="chip${active ? ' on' : ''}" onclick="${fn}">${label}</button>`;
+  return `
+    <div class="frow">
+      <span class="flabel">Category</span>
+      ${cs.map(c => chip(c, catF[which] === c, `setF('${which}','cat','${c}')`)).join('')}
+      <div class="fdiv"></div>
+      <span class="flabel">Status</span>
+      ${ss.map(s => chip(s, stF[which] === s, `setF('${which}','st','${s}')`)).join('')}
+    </div>`;
+}
+
+function renderList(data, which) {
+  const filtered = data.filter(p =>
+    (catF[which] === 'All' || p.cat === catF[which]) &&
+    (stF[which]  === 'All' || p.status === stF[which])
+  );
+  const rows = filtered.length === 0
+    ? `<div class="empty">No patterns match this filter combination.</div>`
+    : filtered.map(p => `
+      <div class="pcard">
+        <div>
+          <div class="ctop">
+            <span class="pname">${p.name}</span>
+            <span class="catbadge" style="background:${CAT_CLR[p.cat]||'#6B7280'}">${p.cat}</span>
+          </div>
+          <div class="impl">→ <code${p.wv ? ' class="wv"' : ''}>${p.impl}</code></div>
+          <div class="pnote">${p.note}</div>
+        </div>
+        <div style="padding-top:2px">
+          <span class="sbadge" style="${sstyle(p.status)}">${p.status}</span>
+        </div>
+      </div>`).join('');
+
+  return `
+    <div class="rcount">${filtered.length} / ${data.length} patterns</div>
+    <div class="plist">${rows}</div>`;
+}
+
+function renderLegend(data) {
+  const statuses = [...new Set(data.map(p => p.status))];
+  return `
+    <div class="legend">
+      ${statuses.map(s => `
+        <div class="li">
+          <span class="sbadge" style="${sstyle(s)}">${s}</span>
+          <span>${ST_DESC[s] || ''}</span>
+        </div>`).join('')}
+    </div>`;
+}
+
+function render() {
+  const data = DATA[tab];
+  document.getElementById('app').innerHTML = `
+    <div class="sec-desc">${DESCS[tab]}</div>
+    ${renderFilters(data, tab)}
+    ${renderList(data, tab)}
+    ${renderLegend(data)}
+  `;
+}
+
+// ── Actions ───────────────────────────────────────────────────────
+window.setTab = t => {
+  tab = t;
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('on'));
+  document.getElementById('tab-' + t).classList.add('on');
+  render();
+};
+
+window.setF = (which, type, val) => {
+  if (type === 'cat') catF[which] = val; else stF[which] = val;
+  render();
+};
+
+render();
+</script>
+</body>
+</html>
