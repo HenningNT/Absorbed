@@ -239,6 +239,39 @@ Patterns don't become _wrong_. Their **forcing functions** disappear.
 </v-click>
 
 ---
+
+## The Pattern Decision Matrix
+
+<div class="text-sm text-slate-500 mb-5">A reusable mental model for evaluating any pattern — not just the ones on these slides.</div>
+
+<div class="grid grid-cols-2 gap-3" style="height:65%">
+  <div class="rounded-xl p-4 border-2 border-red-200 bg-red-50 flex flex-col">
+    <div class="font-mono text-xs font-bold text-red-600 uppercase tracking-widest">Retire</div>
+    <div class="text-xs text-red-400 mb-2">Language limitation · forcing function gone</div>
+    <div class="text-sm text-red-900 flex-1">The language now does this natively. Delete the pattern.</div>
+    <div class="mt-3 font-mono text-xs text-red-500">Strategy · Builder · Visitor · Null Object</div>
+  </div>
+  <div class="rounded-xl p-4 border-2 border-blue-200 bg-blue-50 flex flex-col">
+    <div class="font-mono text-xs font-bold text-blue-600 uppercase tracking-widest">Replace</div>
+    <div class="text-xs text-blue-400 mb-2">Language limitation · better idiom exists</div>
+    <div class="text-sm text-blue-900 flex-1">Intent is valid; expression changes. Write the idiom, not the ceremony.</div>
+    <div class="mt-3 font-mono text-xs text-blue-500">IStrategy → Func&lt;T&gt; · IVisitor → switch · IBuilder → record with</div>
+  </div>
+  <div class="rounded-xl p-4 border-2 border-amber-200 bg-amber-50 flex flex-col">
+    <div class="font-mono text-xs font-bold text-amber-600 uppercase tracking-widest">Absorb</div>
+    <div class="text-xs text-amber-400 mb-2">Infrastructure concern · framework handles it</div>
+    <div class="text-sm text-amber-900 flex-1">The framework or runtime provides this. Rolling your own duplicates it.</div>
+    <div class="mt-3 font-mono text-xs text-amber-500">Singleton→DI · Outbox→Wolverine · Chain→Middleware</div>
+  </div>
+  <div class="rounded-xl p-4 border-2 border-purple-200 bg-purple-50 flex flex-col">
+    <div class="font-mono text-xs font-bold text-purple-600 uppercase tracking-widest">Retain</div>
+    <div class="text-xs text-purple-400 mb-2">Domain / structural · problem persists</div>
+    <div class="text-sm text-purple-900 flex-1">No language or framework change removes domain complexity. Keep it.</div>
+    <div class="mt-3 font-mono text-xs text-purple-500">Aggregate · Value Object · Circuit Breaker · CQRS</div>
+  </div>
+</div>
+
+---
 layout: section
 background: '#1A1F2E'
 class: 'text-white'
@@ -313,418 +346,31 @@ Sort(data, d => d.Sort());
 </div>
 
 ---
-layout: two-cols-header
----
-
-## The Builder Pattern: Ceremony vs. Syntax
-
-Named and optional parameters eliminated the need for a separate Builder class.
-
-::left::
-
-<div class="font-mono text-xs tracking-widest uppercase text-slate-400 mb-3">Before — 80 lines of ceremony</div>
-
-```csharp
-public class HttpRequestBuilder
-{
-    private string _url;
-    private string _method = "GET";
-    private Dictionary<string, string> _headers;
-    private string _body;
-    private TimeSpan _timeout = TimeSpan.FromSeconds(30);
-
-    public HttpRequestBuilder WithUrl(string url)
-    {
-        _url = url;
-        return this;
-    }
-
-    public HttpRequestBuilder WithMethod(string method)
-    {
-        _method = method;
-        return this;
-    }
-
-    public HttpRequestBuilder WithHeader(string key, string value)
-    {
-        _headers ??= new();
-        _headers[key] = value;
-        return this;
-    }
-
-    public HttpRequestBuilder WithBody(string body)
-    {
-        _body = body;
-        return this;
-    }
-
-    public HttpRequestBuilder WithTimeout(TimeSpan timeout)
-    {
-        _timeout = timeout;
-        return this;
-    }
-
-    public HttpRequest Build() => new(_url, _method, _headers, _body, _timeout);
-}
-
-// Usage
-var request = new HttpRequestBuilder()
-    .WithUrl("https://api.example.com")
-    .WithMethod("POST")
-    .WithHeader("Content-Type", "application/json")
-    .WithBody("{\"name\":\"test\"}")
-    .WithTimeout(TimeSpan.FromMinutes(1))
-    .Build();
-```
-
-::right::
-
-<div class="font-mono text-xs tracking-widest uppercase text-amber-600 mb-3">After — constructor with defaults</div>
-
-```csharp
-// Type definition (5 lines)
-public record HttpRequest(
-    string Url,
-    string Method = "GET",
-    Dictionary<string, string>? Headers = null,
-    string? Body = null,
-    TimeSpan Timeout = default
-);
-
-// Usage
-var request = new HttpRequest(
-    Url: "https://api.example.com",
-    Method: "POST",
-    Headers: new()
-    {
-        ["Content-Type"] = "application/json"
-    },
-    Body: "{\"name\":\"test\"}",
-    Timeout: TimeSpan.FromMinutes(1)
-);
-
-// Or with object initializer
-var request2 = new HttpRequest("https://api.example.com")
-{
-    Method = "POST",
-    Body = "{\"name\":\"test\"}"
-};
-```
-
----
-layout: two-cols-header
----
-
-## The Visitor Pattern: Double Dispatch Dissolved
-
-Pattern matching on sealed hierarchies replaced the Visitor's type-safe traversal.
-
-::left::
-
-<div class="font-mono text-xs tracking-widest uppercase text-slate-400 mb-3">Before — 60 lines, 5 types</div>
-
-```csharp
-interface IExpressionVisitor
-{
-    void Visit(Literal literal);
-    void Visit(Addition addition);
-    void Visit(Multiplication multiplication);
-}
-
-abstract class Expression
-{
-    public abstract void Accept(IExpressionVisitor visitor);
-}
-
-class Literal : Expression
-{
-    public double Value { get; }
-    public Literal(double value) => Value = value;
-    public override void Accept(IExpressionVisitor v)
-        => v.Visit(this);
-}
-
-class Addition : Expression
-{
-    public Expression Left { get; }
-    public Expression Right { get; }
-    public Addition(Expression left, Expression right)
-        => (Left, Right) = (left, right);
-    public override void Accept(IExpressionVisitor v)
-        => v.Visit(this);
-}
-
-class Evaluator : IExpressionVisitor
-{
-    public double Result { get; private set; }
-
-    public void Visit(Literal literal)
-        => Result = literal.Value;
-
-    public void Visit(Addition addition)
-    {
-        addition.Left.Accept(this);
-        var left = Result;
-        addition.Right.Accept(this);
-        Result = left + Result;
-    }
-}
-```
-
-::right::
-
-<div class="font-mono text-xs tracking-widest uppercase text-amber-600 mb-3">After — 15 lines, pattern matching</div>
-
-```csharp
-sealed abstract record Expression;
-
-sealed record Literal(double Value)
-    : Expression;
-
-sealed record Addition(Expression Left, Expression Right)
-    : Expression;
-
-sealed record Multiplication(Expression Left, Expression Right)
-    : Expression;
-
-// Evaluation in one expression
-double Evaluate(Expression expr) => expr switch
-{
-    Literal(var value) => value,
-    Addition(var left, var right)
-        => Evaluate(left) + Evaluate(right),
-    Multiplication(var left, var right)
-        => Evaluate(left) * Evaluate(right),
-    _ => throw new()
-};
-
-// New operations are functions, not classes
-string ToInfix(Expression expr) => expr switch
-{
-    Literal(var v) => v.ToString(),
-    Addition(var l, var r)
-        => $"({ToInfix(l)} + {ToInfix(r)})",
-    Multiplication(var l, var r)
-        => $"({ToInfix(l)} * {ToInfix(r)})",
-    _ => throw new()
-};
-```
-
----
-layout: two-cols-header
----
-
-## The Memento Pattern: State Snapshots Made Trivial
-
-Records with `with`-expressions made immutable snapshots a language feature.
-
-::left::
-
-<div class="font-mono text-xs tracking-widest uppercase text-slate-400 mb-3">Before — 40 lines of boilerplate</div>
-
-```csharp
-// The originator
-class Editor
-{
-    private string _text = "";
-    private int _cursor = 0;
-
-    public string Text => _text;
-    public int Cursor => _cursor;
-
-    public void Type(string text)
-    {
-        _text = _text.Insert(_cursor, text);
-        _cursor += text.Length;
-    }
-
-    public void MoveCursor(int position)
-        => _cursor = Math.Clamp(position, 0, _text.Length);
-
-    // Memento inner class
-    public class Memento
-    {
-        public string Text { get; }
-        public int Cursor { get; }
-        internal Memento(string text, int cursor)
-            => (Text, Cursor) = (text, cursor);
-    }
-
-    public Memento Save() => new Memento(_text, _cursor);
-
-    public void Restore(Memento memento)
-    {
-        _text = memento.Text;
-        _cursor = memento.Cursor;
-    }
-}
-
-// Usage
-var editor = new Editor();
-editor.Type("Hello");
-var snapshot = editor.Save();
-editor.Type(" World");
-editor.Restore(snapshot); // Back to "Hello"
-```
-
-::right::
-
-<div class="font-mono text-xs tracking-widest uppercase text-amber-600 mb-3">After — 10 lines, built-in</div>
-
-```csharp
-// The type IS the memento
-record EditorState(string Text, int Cursor);
-
-class Editor
-{
-    private EditorState _state = new("", 0);
-
-    public string Text => _state.Text;
-    public int Cursor => _state.Cursor;
-
-    public void Type(string text)
-        => _state = _state with
-        {
-            Text = _state.Text.Insert(_state.Cursor, text),
-            Cursor = _state.Cursor + text.Length
-        };
-
-    public void MoveCursor(int position)
-        => _state = _state with
-        {
-            Cursor = Math.Clamp(position, 0, _state.Text.Length)
-        };
-
-    // Save / restore are one-liners
-    public EditorState Save() => _state;
-    public void Restore(EditorState saved) => _state = saved;
-}
-
-// Usage is identical, but implementation is 75% smaller
-// The record gives us: equality, hashing, printing, immutability
-```
-
-<div class="mt-4 text-sm text-slate-500">
-  Records provide structural equality, immutability, and <code>with</code>-expressions for free.
-</div>
-
----
-layout: two-cols-header
----
-
-## Null Object Pattern: Language-Level Null Safety
-
-Nullable reference types eliminated the need for explicit "null object" implementations.
-
-::left::
-
-<div class="font-mono text-xs tracking-widest uppercase text-slate-400 mb-3">Before — defensive hierarchy</div>
-
-```csharp
-interface ILogger
-{
-    void Log(string message);
-    void LogError(string message);
-}
-
-class ConsoleLogger : ILogger
-{
-    public void Log(string message)
-        => Console.WriteLine($"[INFO] {message}");
-
-    public void LogError(string message)
-        => Console.WriteLine($"[ERROR] {message}");
-}
-
-// The "null object" — does nothing
-class NullLogger : ILogger
-{
-    public void Log(string message) { }
-    public void LogError(string message) { }
-}
-
-// Usage with explicit null handling
-class Service
-{
-    private readonly ILogger _logger;
-
-    public Service(ILogger? logger = null)
-        => _logger = logger ?? new NullLogger();
-
-    public void DoWork()
-    {
-        _logger.Log("Starting work");
-        // ... work ...
-        _logger.Log("Work complete");
-    }
-}
-
-// Problem: you can still pass null!
-// Problem: every interface needs its own NullX implementation
-```
-
-::right::
-
-<div class="font-mono text-xs tracking-widest uppercase text-amber-600 mb-3">After — compiler-enforced safety</div>
-
-```csharp
-interface ILogger
-{
-    void Log(string message);
-    void LogError(string message);
-}
-
-// No NullLogger needed — use the null-coalescing operator
-class Service
-{
-    private readonly ILogger _logger;
-
-    public Service(ILogger logger)
-        => _logger = logger; // or: ?? throw new()
-
-    public void DoWork()
-    {
-        // Null-safe invocation
-        _logger.Log("Starting work");
-    }
-}
-
-// Caller with optional logging
-var service = new Service(consoleLogger);
-
-// Or skip logging entirely
-var service2 = new Service(new NullLogger());
-// But now the compiler warns if you pass null!
-
-// Even better — extension method for conditional logging
-service.DoWork();
-logger?.Log("Done"); // Compiler knows this is safe
-```
-
-<div class="mt-4 text-sm text-slate-500">
-  <code>#nullable enable</code> makes null a compiler error, not a runtime surprise.
-</div>
-
----
 
 ## SOLID Revisited
 
-| Principle | Status                          | Root cause                                             |
-| --------- | ------------------------------- | ------------------------------------------------------ |
-| **SRP**   | Still valid, narrowed           | The _module_ changed; feature slices are now the unit  |
-| **OCP**   | Mostly obsolete                 | Solved recompilation cost — just modify and redeploy   |
-| **LSP**   | Timeless, less triggered        | Sound mathematics; inheritance is used far less        |
-| **ISP**   | Half valid                      | Fat C++ headers gone; `IFoo` per class is ceremony     |
-| **DIP**   | Concept valid, practice harmful | Spawned `IFoo`-for-everything and DI container overuse |
+| Principle | Status | Root cause |
+|---|---|---|
+| **SRP** | **Evolved** — cohesion unit shifted | From class-level to vertical slice / bounded context; the insight stands |
+| **OCP** | Obsolete for most; survives in niches | CD removes the cost OCP managed. Still real for SDKs, plugins, and regulated release cycles |
+| **LSP** | Timeless, less triggered | Sound mathematics; inheritance is used far less now |
+| **ISP** | Half valid | Fat C++ headers gone; `IFoo`-per-class is ceremony, not design |
+| **DIP** | Direction valid; ceremony harmful | Depend on abstractions at module boundaries — only where real substitution exists |
 
-<v-click>
+<v-clicks>
 
-<div class="mt-5 bg-amber-50 border-l-4 border-amber-500 rounded-r px-4 py-3 text-sm text-amber-900">
-  The principles most tightly coupled to <strong>physical compilation cost</strong> aged worst.
-  SRP and LSP survive because they're not about compilation — they're about reasoning.
+<div class="mt-4 bg-amber-50 border-l-4 border-amber-500 rounded-r px-4 py-3 text-sm text-amber-900">
+  The principles most coupled to <strong>physical compilation cost</strong> aged worst.
+  SRP and LSP survive because they reason about <em>behaviour</em>, not build economics.
 </div>
 
-</v-click>
+<div class="mt-2 bg-slate-100 rounded-lg px-4 py-3 text-sm text-slate-600">
+  <strong>On DIP specifically:</strong> dependency <em>direction</em> at module boundaries is vital.
+  Extracting <code>IFoo</code> for every class is premature abstraction masquerading as inversion.
+  Ask: is there a concrete substitution you'll actually make?
+</div>
+
+</v-clicks>
 
 ---
 layout: section
@@ -941,6 +587,14 @@ class RunScheduledWork
 // ✓ Durable  ✓ Observable  ✓ Retryable
 ```
 
+<div class="mt-3 bg-slate-800 text-slate-200 rounded-lg px-3 py-2 text-xs font-mono leading-relaxed">
+  <span class="text-green-400">// Wolverine message log</span><br>
+  [14:30:00 INF] Scheduled RunScheduledWork @ 14:35:00<br>
+  [14:35:00 INF] Executing RunScheduledWork<br>
+  [14:35:00 INF] Succeeded. Next scheduled: 14:40:00<br>
+  <span class="text-yellow-400">[14:40:00 WRN] Attempt 1 failed — retrying in 30s</span>
+</div>
+
 ---
 layout: section
 background: '#1A1F2E'
@@ -949,27 +603,28 @@ class: 'text-white'
 
 <div class="font-mono text-sm tracking-widest uppercase text-amber-500 mb-3">Part IV</div>
 
-# The Repository Question
+# The Repository in Modern .NET
 
-_`IDocumentSession` as the new seam_
+_When `DbContext` and `IDocumentSession` change the calculus_
 
 ---
 
 ## What Repository Actually Does
 
-| Purpose                             | Status with Wolverine + Marten                                           |
-| ----------------------------------- | ------------------------------------------------------------------------ |
-| Hide the persistence mechanism      | **Absorbed** — `IDocumentSession` _is_ the seam, not a leaky abstraction |
-| Unit of work / transaction boundary | **Absorbed** — `AutoApplyTransactions` owns the handler boundary         |
-| Named, reusable query operations    | **Partially valid** — still useful for queries shared across slices      |
-| Enforce aggregate root access rule  | **Weakened** — now a convention, not a structural constraint             |
+| Purpose | EF Core | Marten |
+|---|---|---|
+| **Hide persistence** | `DbContext` is already the seam; a wrapper adds a layer | `IDocumentSession` *is* the seam — document-oriented by design |
+| **Unit of work** | `DbContext` tracks changes natively | `AutoApplyTransactions` owns the boundary at handler level |
+| **IQueryable leakage** | Real concern — LINQ expressions bleed into domain code | Not applicable — returns documents, not `IQueryable<T>` |
+| **Named queries** | Specification / query methods still earn their place | Compiled queries (`ICompiledQuery<T>`) or query methods |
+| **Aggregate root rule** | Structural constraint has value here | Convention only — no type system enforcement |
 
 <v-click>
 
-<div class="mt-5 bg-amber-50 border-l-4 border-amber-500 rounded-r px-4 py-3 text-sm text-amber-900">
-  In a Wolverine / Marten / VSA stack, the Repository sits closer to the
-  <strong>Absorbed</strong> column than the <strong>Architectural</strong> one.
-  The concept is valid; the `IOrderRepository` wrapper is not pulling its weight.
+<div class="mt-4 bg-amber-50 border-l-4 border-amber-500 rounded-r px-4 py-3 text-sm text-amber-900">
+  In both ecosystems the session/context <em>is</em> the repository. The question is whether a wrapper adds enough to justify the layer.
+  In EF Core the <code>IQueryable</code> abstraction gap is the most defensible reason to wrap.
+  In Marten, that gap does not exist.
 </div>
 
 </v-click>
@@ -982,40 +637,85 @@ layout: two-cols-header
 
 ::left::
 
-### Drop these
+### EF Core
 
 <v-clicks>
 
-- `IOrderRepository` with `Save` / `Load` / `FindBy`
-- Mock-friendly interfaces wrapping `IDocumentSession`
-- Repository as a test seam — use Testcontainers instead
-- Manual `SaveChanges` / transaction orchestration
+- Wrapping `DbContext` is justified **only** if `IQueryable<T>` leaks into domain code
+- Everything else — UoW, transactions, lifetime — `DbContext` already provides
+- If you wrap, keep it thin: named query methods, no `IQueryable` exposure
+- Aggregate root discipline still deserves a structural constraint here
 
 </v-clicks>
 
 ::right::
 
-### Keep these
+### Marten + Wolverine
 
 <v-clicks>
 
-- Inject `IQuerySession` / `IDocumentSession` directly
-- Named query methods for logic shared across slices
-- Marten compiled queries (`ICompiledQuery<T>`) on hot paths
-- Aggregate root discipline as a code review convention
+- Inject `IDocumentSession` / `IQuerySession` directly in handlers
+- No `IQueryable` leakage — the seam is already clean
+- Use compiled queries (`ICompiledQuery<T>`) for hot-path shared logic
+- Aggregate root discipline becomes a code review convention, not a wrapper
 
 </v-clicks>
 
 <v-click>
 
 ```csharp
-// Idiomatic Wolverine / Marten handler
-public static async Task<OrderDto> Handle(
-    GetOrder query,
-    IQuerySession session,
-    CancellationToken ct)
-    => await session.LoadAsync<Order>(query.OrderId, ct);
+// EF Core — wrap only if IQueryable would leak
+public Task<Order?> FindAsync(Guid id)
+    => ctx.Orders.FirstOrDefaultAsync(o => o.Id == id);
+
+// Marten — inject the session directly
+public static Task<Order?> Handle(GetOrder q, IQuerySession s, CancellationToken ct)
+    => s.LoadAsync<Order>(q.OrderId, ct);
 ```
+
+</v-click>
+
+---
+
+## Retiring Abstractions Means Retiring Mock-Heavy Tests
+
+Removing wrapper interfaces changes how you must test.
+
+<div class="grid grid-cols-2 gap-4 mt-4">
+<div class="bg-red-50 border border-red-200 rounded-xl p-4">
+
+**Before — mock the repository**
+
+```csharp
+var repo = new Mock<IOrderRepository>();
+repo.Setup(r => r.FindAsync(id))
+    .ReturnsAsync(order);
+// Tests the mock, not the behaviour
+```
+
+</div>
+<div class="bg-green-50 border border-green-200 rounded-xl p-4">
+
+**After — test with real infrastructure**
+
+```csharp
+await using var host =
+    await AlbaHost.For<Program>();
+await host.Scenario(s =>
+    s.Post.Json(new PlaceOrder(id)));
+// Real DB · real handler · real outbox
+```
+
+</div>
+</div>
+
+<v-click>
+
+<div class="bg-amber-50 border-l-4 border-amber-500 rounded-r px-4 py-3 text-sm text-amber-900 mt-4">
+  <strong>Retiring the abstraction layer means retiring the mock-heavy unit test.</strong>
+  Integration tests with Testcontainers or Alba become the primary quality gate.
+  They are now fast enough to make this the right trade.
+</div>
 
 </v-click>
 
@@ -1057,7 +757,7 @@ Every expired practice was solving for **expensive feedback loops**.
 
 5. **Wolverine absorbs infrastructure patterns, not domain ones** — stop writing `BackgroundWorker` schedulers and manual outboxes.
 
-6. **In a Wolverine / Marten stack, `IDocumentSession` is the repository** — a wrapper adds a layer with no new capability.
+6. **The session/context is the repository** — `DbContext` in EF Core, `IDocumentSession` in Marten. Wrap only when `IQueryable` leakage is the concrete concern.
 
 7. **Current practices have expiry dates too** — microservices-by-default and orchestration frameworks are solving today's constraints.
 
