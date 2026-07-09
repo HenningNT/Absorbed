@@ -8,6 +8,7 @@ transition: fade-out
 layout: cover
 background: '#0F1117'
 class: 'text-left'
+colorSchema: dark
 fonts:
   sans: 'Inter'
   mono: 'JetBrains Mono'
