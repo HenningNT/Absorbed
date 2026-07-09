@@ -75,6 +75,10 @@ _Why the Gang of Four and SOLID were born_
 
 In 1994, changing a single header file could trigger:
 
+<div class="grid grid-cols-2 gap-8 items-start">
+
+<div>
+
 <v-clicks>
 
 - Full project recompilation — **45 minutes to 2 hours**
@@ -83,6 +87,17 @@ In 1994, changing a single header file could trigger:
 - A coffee break became a lunch break became a "go home early"
 
 </v-clicks>
+
+</div>
+
+<div class="flex items-center justify-center">
+  <img 
+    src="https://imgs.xkcd.com/comics/compiling.png" 
+    class="max-h-[250px] w-auto rounded shadow-lg" 
+    alt="xkcd: Compiling">
+</div>
+
+</div>
 
 <v-click>
 
