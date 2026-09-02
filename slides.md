@@ -173,6 +173,12 @@ Every principle addressed _one specific, painful cost_:
 | **ISP**   | Fat interfaces forced recompilation of unrelated code|
 | **DIP**   | Concrete dependencies meant hardcoded, inflexible code|
 
+<style>
+table {
+  font-size: 0.8rem;
+}
+</style>
+
 <v-click>
 
 <div class="mt-5 bg-red-50 border-l-4 border-red-400 rounded-r px-4 py-3 text-sm text-red-800">
@@ -234,6 +240,41 @@ Patterns don't become _wrong_. Their **forcing functions** disappear.
 - Single-machine assumption → a whole new set is still very much needed
 
 </v-clicks>
+
+---
+
+## Complexity Is the Common Thread
+
+The pattern authors did not always say it this way, but the deeper job is the same:
+**manage complexity without creating more of it.**
+
+<div class="grid grid-cols-2 gap-8 items-center mt-6">
+
+<div class="flex flex-col items-center justify-center">
+  <img
+    src="https://grugbrain.dev/grug.png"
+    class="max-h-[220px] w-auto"
+    alt="The Grug Brained Developer"
+  >
+  <a href="https://grugbrain.dev/" class="text-xs text-slate-500 mt-3">The Grug Brained Developer</a>
+</div>
+
+<div class="space-y-4">
+  <div class="bg-slate-800 border-l-4 border-amber-500 rounded-r-lg px-5 py-4 text-xl text-slate-100">
+    Complexity very, very bad.
+  </div>
+
+  <div class="text-base leading-relaxed text-slate-300">
+    <strong class="text-slate-100">Patterns earn their keep</strong> when they make a hard system easier to change, reason about, or operate.
+  </div>
+
+  <div class="text-sm leading-relaxed text-slate-400">
+    So the test is not “is this a known pattern?”<br>
+    It is “does this reduce complexity at the boundary that matters?”
+  </div>
+</div>
+
+</div>
 
 ---
 
@@ -326,6 +367,8 @@ The pattern existed to pass _behaviour as a parameter_ in languages without firs
 
 ::left::
 
+<div class="h-full rounded-lg border border-slate-700 bg-slate-900 p-4">
+
 <div class="font-mono text-xs tracking-widest uppercase text-slate-400 mb-3">Before — C# 1.0</div>
 
 ```csharp
@@ -341,9 +384,13 @@ var sorter = new Sorter(new BubbleSort());
 sorter.Execute(data);
 ```
 
+</div>
+
 ::right::
 
-<div class="font-mono text-xs tracking-widest uppercase text-amber-600 mb-3">After — Modern C#</div>
+<div class="h-full rounded-lg border border-amber-700 bg-slate-800 p-4">
+
+<div class="font-mono text-xs tracking-widest uppercase text-amber-400 mb-3">After — Modern C#</div>
 
 ```csharp
 void Sort(
@@ -356,9 +403,11 @@ void Sort(
 Sort(data, d => d.Sort());
 ```
 
-<div class="mt-5 text-sm text-slate-500">
+<div class="mt-5 text-sm text-slate-400">
   The pattern wasn't discovered wisdom.<br>
   It was <strong>compensation for a missing feature.</strong>
+</div>
+
 </div>
 
 ---
@@ -372,6 +421,12 @@ Sort(data, d => d.Sort());
 | **LSP** | Timeless, less triggered | Sound mathematics; inheritance is used far less now |
 | **ISP** | Half valid | Fat C++ headers gone; `IFoo`-per-class is ceremony, not design |
 | **DIP** | Direction valid; ceremony harmful | Depend on abstractions at module boundaries — only where real substitution exists |
+
+<style>
+table {
+  font-size: 0.8rem;
+}
+</style>
 
 <v-clicks>
 
@@ -437,42 +492,42 @@ These predate OOP and will outlast it. Records make the syntax easier; the _conc
 </v-clicks>
 
 ---
-layout: two-cols
+layout: two-cols-header
 ---
 
 ## Resilience & Distributed Patterns
 
 These didn't exist in the GoF era. They emerged with cloud-hosted, network-dependent systems.
 
-### Resilience (Polly / .NET 8)
+::left::
 
-<v-clicks>
+### Resilience (Polly / .NET)
+
+<v-click>
 
 - **Circuit Breaker** — fail fast, protect thread pools
 - **Retry + Backoff** — transient faults with jitter
 - **Bulkhead** — isolate resource pools
 - **Timeout** — bound every async operation
 
-</v-clicks>
+</v-click>
 
 ::right::
 
-<br><br>
-
 ### Distributed Systems
 
-<v-clicks>
+<v-click>
 
 - **Outbox** — solve the dual-write problem
 - **Saga** — coordinate across service boundaries
 - **CQRS** — separate read / write pressure
 - **Producer / Consumer** — `Channel<T>` backpressure
 
-</v-clicks>
+</v-click>
 
 <v-click>
 
-<div class="mt-5 bg-red-50 border-l-4 border-red-400 rounded-r px-3 py-3 text-sm text-red-800">
+<div class="fixed bottom-8 left-8 right-8 bg-red-50 border-l-4 border-red-400 rounded-r px-3 py-3 text-sm text-red-800">
   These are <strong>operational necessities</strong>, not design preferences.<br>
   Skipping them has failure-mode consequences, not just code quality ones.
 </div>
@@ -480,6 +535,7 @@ These didn't exist in the GoF era. They emerged with cloud-hosted, network-depen
 </v-click>
 
 ---
+disabled: false
 layout: section
 background: '#1A1F2E'
 class: 'text-white'
@@ -491,6 +547,8 @@ class: 'text-white'
 
 _Patterns as manual plumbing vs. framework design_
 
+---
+disabled: false
 ---
 
 ## Wolverine's Absorption Surface
@@ -507,7 +565,14 @@ _Patterns as manual plumbing vs. framework design_
 | `IHostedService` for background processing | Wolverine _is_ the hosted service                         |
 | `BackgroundWorker` / timer scheduler       | Cascading `SchedulePublishAsync` messages                 |
 
+<style>
+table {
+  font-size: 0.8rem;
+}
+</style>
+
 ---
+disabled: true
 layout: two-cols-header
 ---
 
@@ -517,6 +582,8 @@ The old instinct: protect shared state with a runtime primitive.
 The Wolverine instinct: eliminate the race architecturally.
 
 ::left::
+
+<div class="h-full rounded-lg border border-slate-700 bg-slate-900 p-4">
 
 <div class="font-mono text-xs tracking-widest uppercase text-slate-400 mb-3">Before — runtime guard</div>
 
@@ -533,9 +600,13 @@ void Handle(IncrementCmd cmd)
 }
 ```
 
+  </div>
+
 ::right::
 
-<div class="font-mono text-xs tracking-widest uppercase text-amber-600 mb-3">After — architectural constraint</div>
+  <div class="h-full rounded-lg border border-amber-700 bg-slate-800 p-4">
+
+  <div class="font-mono text-xs tracking-widest uppercase text-amber-400 mb-3">After — architectural constraint</div>
 
 ```csharp
 // Configure once at startup
@@ -549,13 +620,16 @@ opts.LocalQueueFor<IncrementCmd>()
 
 <v-click>
 
-<div class="mt-4 bg-amber-50 border-l-4 border-amber-500 rounded-r px-3 py-2 text-sm italic text-amber-900">
+<div class="mt-4 bg-slate-900 border-l-4 border-amber-500 rounded-r px-3 py-2 text-sm italic text-amber-200">
   The race is eliminated before the handler runs,<br>not guarded inside it.
 </div>
 
 </v-click>
 
+</div>
+
 ---
+disabled: false
 layout: two-cols-header
 ---
 
@@ -564,6 +638,8 @@ layout: two-cols-header
 `BackgroundWorker` was designed in 2005 for WinForms UI thread marshalling — not server-side scheduling.
 
 ::left::
+
+<div class="h-full rounded-lg border border-slate-700 bg-slate-900 p-4">
 
 <div class="font-mono text-xs tracking-widest uppercase text-slate-400 mb-3">Before — hidden background thread</div>
 
@@ -582,9 +658,13 @@ worker.RunWorkerAsync();
 // ✗ No retry on failure
 ```
 
+</div>
+
 ::right::
 
-<div class="font-mono text-xs tracking-widest uppercase text-amber-600 mb-3">After — self-scheduling message</div>
+<div class="h-full rounded-lg border border-amber-700 bg-slate-800 p-4">
+
+<div class="font-mono text-xs tracking-widest uppercase text-amber-400 mb-3">After — self-scheduling message</div>
 
 ```csharp
 class RunScheduledWork
@@ -611,10 +691,13 @@ class RunScheduledWork
   <span class="text-yellow-400">[14:40:00 WRN] Attempt 1 failed — retrying in 30s</span>
 </div>
 
+</div>
+
 ---
 layout: section
 background: '#1A1F2E'
 class: 'text-white'
+disabled: true
 ---
 
 <div class="font-mono text-sm tracking-widest uppercase text-amber-500 mb-3">Part IV</div>
@@ -623,6 +706,8 @@ class: 'text-white'
 
 _When `DbContext` and `IDocumentSession` change the calculus_
 
+---
+disabled: true
 ---
 
 ## What Repository Actually Does
@@ -635,6 +720,12 @@ _When `DbContext` and `IDocumentSession` change the calculus_
 | **Named queries** | Specification / query methods still earn their place | Compiled queries (`ICompiledQuery<T>`) or query methods |
 | **Aggregate root rule** | Structural constraint has value here | Convention only — no type system enforcement |
 
+<style>
+table {
+  font-size: 0.8rem;
+}
+</style>
+
 <v-click>
 
 <div class="mt-4 bg-amber-50 border-l-4 border-amber-500 rounded-r px-4 py-3 text-sm text-amber-900">
@@ -646,6 +737,7 @@ _When `DbContext` and `IDocumentSession` change the calculus_
 </v-click>
 
 ---
+disabled: true
 layout: two-cols-header
 ---
 
@@ -655,7 +747,7 @@ layout: two-cols-header
 
 ### EF Core
 
-<v-clicks>
+<v-clicks class="text-sm leading-relaxed">
 
 - Wrapping `DbContext` is justified **only** if `IQueryable<T>` leaks into domain code
 - Everything else — UoW, transactions, lifetime — `DbContext` already provides
@@ -668,7 +760,7 @@ layout: two-cols-header
 
 ### Marten + Wolverine
 
-<v-clicks>
+<v-clicks class="text-sm leading-relaxed">
 
 - Inject `IDocumentSession` / `IQuerySession` directly in handlers
 - No `IQueryable` leakage — the seam is already clean
@@ -679,18 +771,27 @@ layout: two-cols-header
 
 <v-click>
 
+<div class="text-xs">
+
 ```csharp
 // EF Core — wrap only if IQueryable would leak
 public Task<Order?> FindAsync(Guid id)
     => ctx.Orders.FirstOrDefaultAsync(o => o.Id == id);
 
 // Marten — inject the session directly
-public static Task<Order?> Handle(GetOrder q, IQuerySession s, CancellationToken ct)
+public static Task<Order?> Handle(
+  GetOrder q,
+  IQuerySession s,
+  CancellationToken ct)
     => s.LoadAsync<Order>(q.OrderId, ct);
 ```
 
+</div>
+
 </v-click>
 
+---
+disabled: true
 ---
 
 ## Retiring Abstractions Means Retiring Mock-Heavy Tests
@@ -698,7 +799,7 @@ public static Task<Order?> Handle(GetOrder q, IQuerySession s, CancellationToken
 Removing wrapper interfaces changes how you must test.
 
 <div class="grid grid-cols-2 gap-4 mt-4">
-<div class="bg-red-50 border border-red-200 rounded-xl p-4">
+<div class="bg-slate-900 border border-red-700 rounded-xl p-4">
 
 **Before — mock the repository**
 
@@ -710,7 +811,7 @@ repo.Setup(r => r.FindAsync(id))
 ```
 
 </div>
-<div class="bg-green-50 border border-green-200 rounded-xl p-4">
+<div class="bg-slate-800 border border-green-700 rounded-xl p-4">
 
 **After — test with real infrastructure**
 
@@ -727,7 +828,7 @@ await host.Scenario(s =>
 
 <v-click>
 
-<div class="bg-amber-50 border-l-4 border-amber-500 rounded-r px-4 py-3 text-sm text-amber-900 mt-4">
+<div class="bg-slate-800 border-l-4 border-amber-500 rounded-r px-4 py-3 text-sm text-amber-200 mt-4">
   <strong>Retiring the abstraction layer means retiring the mock-heavy unit test.</strong>
   Integration tests with Testcontainers or Alba become the primary quality gate.
   They are now fast enough to make this the right trade.
@@ -793,7 +894,8 @@ class: 'text-left'
 
 <p class="text-slate-400 mt-4 text-lg leading-relaxed">
   A filterable reference with all 53 patterns —<br>
-  organised by category and status — is available as a companion document.
+  organised by category and status — is available as a
+  <a href="https://henningnt.github.io/Absorbed/" class="text-amber-400 hover:text-amber-300 underline">companion document</a>.
 </p>
 
 <p class="text-slate-600 mt-10 text-base italic">
